@@ -1,4 +1,4 @@
-# code128
+# GS1-128
 This package provides a LaTeX style file with barcode macros for the
 **Code 128** standard.
 
