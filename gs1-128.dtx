@@ -1,0 +1,428 @@
+% \iffalse meta-comment
+%
+% Copyright (C) 2018 by Matthias Kornexl
+% --------------------------------------
+%
+% This file may be distributed and/or modified under the conditions
+% of GNU General Public License, either version 3.0 of this license
+% or (at your option) any later version.
+% The latest version of this license is in:
+%
+% http://www.gnu.org/copyleft/gpl.html
+%
+% The code is based on code128 package, March 1996 (C) Petr Olšák,
+% which is licensed under GNU General Public License.
+%
+% \fi
+%
+% \iffalse
+%<*driver>
+\ProvidesFile{gs1-128.dtx}
+%</driver>
+%<package>\NeedsTexFormat{LaTeX2e}[1999/12/01]
+%<package>\ProvidesPackage{gs1-128}
+%<*package>
+	[2018/02/28 v0.7 gs1-128 Barcodes]
+%</package>
+%
+%<*driver>
+\documentclass{ltxdoc}
+\usepackage{gs1-128}
+\EnableCrossrefs
+\CodelineIndex
+\RecordChanges
+\begin{document}
+	\DocInput{gs1-128.dtx}
+	\PrintChanges
+	\PrintIndex
+\end{document}
+%</driver>
+% \fi
+%
+% \CheckSum{0}
+%
+% \CharacterTable
+%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%   Digits        \0\1\2\3\4\5\6\7\8\9
+%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%   Dollar        \$     Percent       \%     Ampersand     \&
+%   Acute accent  \'     Left paren    \(     Right paren   \)
+%   Asterisk      \*     Plus          \+     Comma         \,
+%   Minus         \-     Point         \.     Solidus       \/
+%   Colon         \:     Semicolon     \;     Less than     \<
+%   Equals        \=     Greater than  \>     Question mark \?
+%   Commercial at \@     Left bracket  \[     Backslash     \\
+%   Right bracket \]     Circumflex    \^     Underscore    \_
+%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%   Right brace   \}     Tilde         \~}
+%
+%
+% \changes{v0.7}{2018/02/28}{initial $\beta$-version}
+%
+% \GetFileInfo{gs1-128.dtx}
+%
+% \DoNotIndex{\newcommand,\newenvironment}
+% 
+%
+% \title{The \textsf{gs1-128} package\thanks{This document
+%   corresponds to \textsf{gs1-128}~\fileversion, dated \filedate.}}
+% \author{Matthias Kornexl \\ \texttt{mk@iib.at}}
+%
+% \maketitle
+%
+% \begin{abstract}
+%
+% \end{abstract}
+%
+% \section{Introduction}
+%
+% \section{Usage}
+%
+% Put text here.
+%
+% \DescribeMacro{\dummyMacro}
+% This macro does nothing.\index{doing nothing|usage} It is merely an
+% example.  If this were a real macro, you would put a paragraph here
+% describing what the macro is supposed to do, what its mandatory and
+% optional arguments are, and so forth.
+%
+% \StopEventually{}
+%
+% \section{Implementation}
+% \subsection{Declarations}
+% \begin{macro}{\X}
+% \begin{macro}{\bcorr}
+% \begin{macro}{\barheight}
+% \begin{macro}{\@workdimen}
+% The dimension of the barcode are controlled by the X-module width
+% |\X| and the bar correction |\bcorr|. Each bar's width is reduced
+% by |\bcorr|, whereas the following white space is extended by this
+% amount. The bar height is controlled by the dimension variable
+% |\barheight|. |\@workdimen| is an internal length.
+%    \begin{macrocode}
+\newdimen\X			\X=.33mm
+\newdimen\bcorr		\bcorr=.020mm
+\newdimen\barheight	\barheight=1.5mm
+\newdimen\@workdimen
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\@inputtext}
+% \begin{macro}{\@icode}
+%    \begin{macrocode}
+\newtoks\@inputtext
+\newtoks\@icode
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\@tempnum}
+% \begin{macro}{\@chnum}
+% \begin{macro}{\@chtotal}
+%    \begin{macrocode}
+\newcount\@tempnum
+\newcount\@chnum
+\newcount\@chtotal
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\if@next}
+% \begin{macro}{\if@char}
+%    \begin{macrocode}
+\newif\if@next
+\newif\if@char
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\empty}
+% \begin{macro}{\End}
+%    \begin{macrocode}
+% \def\empty{} %% This already is defined!
+\def\End{@@end} %% This could be replaced by \@nil!
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+%
+% \subsection{Table Definitions}
+% \begin{macro}{\definetable}
+% \begin{macro}{\@@definetable}
+% The macro |\definetable|\meta{label}\meta{num} \meta{string} |\relax|
+% assigns each token from \meta{string} a value (spaces are ignored).
+% First token gets value \meta{num}, second one \meta{num+1}, and so on.
+% To get the value of each token within \meta{string}, use
+% |\csname|\meta{label}|\string|\meta{token}|\endcsname|.
+%    \begin{macrocode}
+\def\definetable#1#2 {%
+	\@tempnum=#2
+	\def\@tempa{#1}%
+	\let\next=\@@definetable
+	\next%
+}
+\def\repeatdefine#1{%
+	\ifx#1\relax
+		\let\next=\relax
+	\else
+		\expandafter\edef\csname\@tempa\string#1\endcsname{\the\@tempnum}%
+		\advance\@tempnum by 1
+	\fi
+	\next%
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% Define all input characters from Code B:
+%    \begin{macrocode}
+\definetable:0
+	\  ! " \# \$ \% \& ' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @
+	A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ \\ ] \^ \_ `
+	a b c d e f g h i j k l m n o p q r s t u v w x y z \{ | \} \~ \DEL
+	\relax
+%    \end{macrocode}
+%
+% Other input characters from Code A:
+%    \begin{macrocode}
+\definetable:64
+	\NUL \SOH \STX \ETX \EOT \ENQ \ACK \BEL \BS \HT \LF \VT \FF \CR \SO \SI
+	\DLE \DCone \DCtwo \DCthree \DCfour \NAK \SYN \ETB \CAN \EM \SUB \ESC
+	\FS \GS \RS \US
+	\relax
+%    \end{macrocode}
+%
+% |\ | must be the same as |\|\meta{space} and |\SP| is an alternative to
+% |\|\meta{space}.
+%    \begin{macrocode}
+\definetable:0
+	\
+	\relax
+\definetable:0
+	\SP
+	\relax
+%    \end{macrocode}
+%
+% Define all digits (with \meta{labe} |D:|)
+%    \begin{macrocode}
+\definetable{D:}0
+	0 1 2 3 4 5 6 7 8 9
+	\relax  % Digits
+%    \end{macrocode}
+%
+% Define input characters only available in code B.
+%    \begin{macrocode}
+\definetable{B:}0
+	` a b c d e f g h i j k l m n o p q r s t u v w x y z
+	\{ \| \} \~
+	\relax
+%    \end{macrocode}
+%
+% Define input tokens only available in code A.
+%    \begin{macrocode}
+\definetable{A:}0 
+	\NUL \SOH \STX \ETX \EOT \ENQ \ACK \BEL \BS \HT \LF \VT
+	\FF \CR \SO \SI \DLE \DCone \DCtwo \DCthree \DCfour \NAK \SYN \ETB \CAN
+	\EM \SUB \ESC \FS \GS \RS \US
+	\relax
+%    \end{macrocode}
+%
+% \begin{macro}{\tableofcode}
+% The macro |\tableofcode|\marg{i} returns the pattern of character
+% \meta{i}. The pattern is given as a sequence of 6 integers, with the
+% first integer indicating the width of the first bar, followed by the
+% width of the first white space, and so on.
+%    \begin{macrocode}
+\def\tableofcode#1{%
+	\ifcase#1
+		212222\or 222122\or 222221\or 121223\or 121322\or % 0-4
+		131222\or 122213\or 122312\or 132212\or 221213\or % 5-9
+		221312\or 231212\or 112232\or 122132\or 122231\or % 10-14
+		113222\or 123122\or 123221\or 223211\or 221132\or % 15-19
+		221231\or 213212\or 223112\or 312131\or 311222\or % 20-24
+		321122\or 321221\or 312212\or 322112\or 322211\or % 25-29
+		212123\or 212321\or 232121\or 111323\or 131123\or % 30-34
+		131321\or 112313\or 132113\or 132311\or 211313\or % 35-39
+		231113\or 231311\or 112133\or 112331\or 132131\or % 40-44
+		113123\or 113321\or 133121\or 313121\or 211331\or % 45-49
+		231131\or 213113\or 213311\or 213131\or 311123\or % 50-54
+		311321\or 331121\or 312113\or 312311\or 332111\or % 55-59
+		314111\or 221411\or 431111\or 111224\or 111422\or % 60-64
+		121124\or 121421\or 141122\or 141221\or 112214\or % 65-69
+		112412\or 122114\or 122411\or 142112\or 142211\or % 70-74
+		241211\or 221114\or 413111\or 241112\or 134111\or % 75-79
+		111242\or 121142\or 121241\or 114212\or 124112\or % 80-84
+		124211\or 411212\or 421112\or 421211\or 212141\or % 85-89
+		214121\or 412121\or 111143\or 111341\or 131141\or % 90-94
+		114113\or 113311\or 411113\or 411311\or 113141\or % 95-99
+		114131\or 311141\or 411131        				  % 100-102
+	\else 00000
+	\fi
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\startA}
+% \begin{macro}{\startB}
+% \begin{macro}{\startC}
+% \begin{macro}{\stop}
+% Macros |\startA|, |\startB|, and |\startC| define the patterns for
+% starting sequences of code A, B, and C respectively. |\stop| defines
+% the stop pattern.
+%    \begin{macrocode}
+\def\startA{211412}
+\def\startB{211214}
+\def\startC{211232}
+\def\stop{23311120}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+%
+%
+% \subsection{Tests}
+% \begin{macro}{\testchar}
+% |\testchar |\meta{label}{token} sets the boolean variable |\if@char|
+% to |true| if \meta{token} is \emph{only} in code A, B, or C,
+% for \meta{label} being |A:|, |B:|, or |C:|, respectively.
+%    \begin{macrocode}
+\def\testchar #1#2{%
+	\expandafter\ifx\csname#1\string#2\endcsname \relax
+		\@charfalse
+	\else
+		\@chartrue
+	\fi}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\numofdigits}
+% \begin{macro}{\@@numofdigits}
+% |\numofdigits |\meta{string}|\stop| set the |\@tempnum| register
+% to the number of digits \meta{string} starts with. If \meta{string}
+% does not start with a digit, then |\@tempnum = 0|.
+%    \begin{macrocode}
+\def\numofdigits{%
+	\tempnum=0
+	\let\next=\cyklnumber
+	\@@numofdigits%
+}
+\def\@@numofdigits#1{%
+	\testchar {D:}#1%
+	\if@char
+		\advance\@tempnum by 1
+	\else\ifx #1\stop%
+		\def\next{}%
+	\else
+		\def\next##1\stop{}%
+	\fi\fi
+	\next%
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\testA}
+% \begin{macro}{\testnext}
+% \begin{macro}{\@@testnext}
+% |\testnext|\meta{label}\ \meta{string}|\stop| set the boolean
+% register |\if@next| to |true| if
+% \begin{enumerate}
+%	\item \meta{label} is |A:|: first character in \meta{string},
+%		after skipping all characters common to code A \emph{and}
+%		B, is only in code A;
+%	\item \meta{label} is |B:|: first character in \meta{string},
+%		after skipping all characters common to code A \emph{and}
+%		B, is only in code B;
+% \end{enumerate}
+%    \begin{macrocode}
+\def\testA{A:}
+\def\testnext#1{%
+	\@nextfalse
+	\def\@tempa{#1}%
+	\ifx\@tempa\testA
+		\def\@tempb{B:}
+	\else
+		\def\@tempb{A:}
+	\fi
+	\let\next=\@@testnext
+	\next%
+}
+\def\@@testnext#1{%
+	\ifx#1\stop
+		\let\next=\relax
+	\else
+		\testchar \@tempb #1%
+		\if@char
+			\def\next##1\stop{}%
+		\else
+			\testchar \@tempa #1%
+			\if@char
+				\@nexttrue
+				\def\next##1\stop{}
+			\fi
+		\fi
+	\fi
+	\next%
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\addtok}
+% |\addtok|\meta{token} add \meta{token}|,| to |\@icode|.
+%    \begin{macrocode}
+\def\addtok#1{%
+	\edef\act{%
+		\noexpand\@icode={\the\@icode\noexpand#1,}%
+	}%
+	\act%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro{\addtoks}}
+% |\addtoks|\marg{string} adds \meta{string} to |\@icode|.
+% \meta{string} is the symbol value of the character to encode.
+% This value is used to recalculate the checksum.
+%    \begin{macrocode}
+\def\addtoks#1{%
+	\edef\act{%
+		\noexpand\@icode={\the\@icode#1,}%
+	}%
+	\act
+	\@tempnum=#1 \multiply\@tempnum by\@chnum
+	\advance\@chtotal by\@tempnum
+	\advance\@chnum by 1%
+	\relax%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\addchar}
+% |\addchar| \meta{token} adds the numerical value of \meta{token},
+% as defined by |\definetable| above, to |\@icode|. This value is
+% followed by a comma.
+%    \begin{macrocode}
+\def\addchar#1{%
+	\expandafter\ifx\csname:\string#1\endcsname\relax
+		\errmessage{The input token "\string#1" is not included in
+			Code 128 table and will ignored}%
+	\else
+		\expandafter\addtoks\expandafter{%
+			\csname:\string#1\endcsname%
+		}%
+	\fi%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \Finale
+\endinput

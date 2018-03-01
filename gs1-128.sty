@@ -1,0 +1,187 @@
+%%
+%% This is file `gs1-128.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% gs1-128.dtx  (with options: `package')
+%% 
+%% This is a generated file.
+%% 
+%% Copyright (C) 2018 by Matthias Kornexl
+%% 
+%% This file may be distributed and/or modified under the conditions
+%% of GNU General Public License, either version 3.0 of this license
+%% or (at your option) any later version.
+%% The latest version of this license is in:
+%% 
+%% http://www.gnu.org/copyleft/gpl.html
+%% 
+\NeedsTexFormat{LaTeX2e}[1999/12/01]
+\ProvidesPackage{gs1-128}
+[2018/02/28 v0.7 gs1-128 Barcodes]
+\newdimen\X \X=.33mm
+\newdimen\bcorr \bcorr=.020mm
+\newdimen\barheight \barheight=1.5mm
+\newdimen\@workdimen
+\newtoks\@inputtext
+\newtoks\@icode
+\newcount\@tempnum
+\newcount\@chnum
+\newcount\@chtotal
+\newif\if@next
+\newif\if@char
+\def\End{@@end} %% This could be replaced by \@nil!
+\def\definetable#1#2 {%
+\@tempnum=#2
+\def\@tempa{#1}%
+\let\next=\@@definetable
+\next%
+}
+\def\repeatdefine#1{%
+\ifx#1\relax
+\let\next=\relax
+\else
+\expandafter\edef\csname\@tempa\string#1\endcsname{\the\@tempnum}%
+\advance\@tempnum by 1
+\fi
+\next%
+}
+\definetable:0
+\  ! " \# \$ \% \& ' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ \\ ] \^ \_ `
+a b c d e f g h i j k l m n o p q r s t u v w x y z \{ | \} \~ \DEL
+\relax
+\definetable:64
+\NUL \SOH \STX \ETX \EOT \ENQ \ACK \BEL \BS \HT \LF \VT \FF \CR \SO \SI
+\DLE \DCone \DCtwo \DCthree \DCfour \NAK \SYN \ETB \CAN \EM \SUB \ESC
+\FS \GS \RS \US
+\relax
+\definetable:0
+\
+\relax
+\definetable:0
+\SP
+\relax
+\definetable{D:}0
+0 1 2 3 4 5 6 7 8 9
+\relax  % Digits
+\definetable{B:}0
+` a b c d e f g h i j k l m n o p q r s t u v w x y z
+\{ \| \} \~
+\relax
+\definetable{A:}0
+\NUL \SOH \STX \ETX \EOT \ENQ \ACK \BEL \BS \HT \LF \VT
+\FF \CR \SO \SI \DLE \DCone \DCtwo \DCthree \DCfour \NAK \SYN \ETB \CAN
+\EM \SUB \ESC \FS \GS \RS \US
+\relax
+\def\tableofcode#1{%
+\ifcase#1
+212222\or 222122\or 222221\or 121223\or 121322\or % 0-4
+131222\or 122213\or 122312\or 132212\or 221213\or % 5-9
+221312\or 231212\or 112232\or 122132\or 122231\or % 10-14
+113222\or 123122\or 123221\or 223211\or 221132\or % 15-19
+221231\or 213212\or 223112\or 312131\or 311222\or % 20-24
+321122\or 321221\or 312212\or 322112\or 322211\or % 25-29
+212123\or 212321\or 232121\or 111323\or 131123\or % 30-34
+131321\or 112313\or 132113\or 132311\or 211313\or % 35-39
+231113\or 231311\or 112133\or 112331\or 132131\or % 40-44
+113123\or 113321\or 133121\or 313121\or 211331\or % 45-49
+231131\or 213113\or 213311\or 213131\or 311123\or % 50-54
+311321\or 331121\or 312113\or 312311\or 332111\or % 55-59
+314111\or 221411\or 431111\or 111224\or 111422\or % 60-64
+121124\or 121421\or 141122\or 141221\or 112214\or % 65-69
+112412\or 122114\or 122411\or 142112\or 142211\or % 70-74
+241211\or 221114\or 413111\or 241112\or 134111\or % 75-79
+111242\or 121142\or 121241\or 114212\or 124112\or % 80-84
+124211\or 411212\or 421112\or 421211\or 212141\or % 85-89
+214121\or 412121\or 111143\or 111341\or 131141\or % 90-94
+114113\or 113311\or 411113\or 411311\or 113141\or % 95-99
+114131\or 311141\or 411131           % 100-102
+\else 00000
+\fi
+}
+\def\startA{211412}
+\def\startB{211214}
+\def\startC{211232}
+\def\stop{23311120}
+\def\testchar #1#2{%
+\expandafter\ifx\csname#1\string#2\endcsname \relax
+\@charfalse
+\else
+\@chartrue
+\fi}
+\def\numofdigits{%
+\tempnum=0
+\let\next=\cyklnumber
+\@@numofdigits%
+}
+\def\@@numofdigits#1{%
+\testchar {D:}#1%
+\if@char
+\advance\@tempnum by 1
+\else\ifx #1\stop%
+\def\next{}%
+\else
+\def\next##1\stop{}%
+\fi\fi
+\next%
+}
+\def\testA{A:}
+\def\testnext#1{%
+\@nextfalse
+\def\@tempa{#1}%
+\ifx\@tempa\testA
+\def\@tempb{B:}
+\else
+\def\@tempb{A:}
+\fi
+\let\next=\@@testnext
+\next%
+}
+\def\@@testnext#1{%
+\ifx#1\stop
+\let\next=\relax
+\else
+\testchar \@tempb #1%
+\if@char
+\def\next##1\stop{}%
+\else
+\testchar \@tempa #1%
+\if@char
+\@nexttrue
+\def\next##1\stop{}
+\fi
+\fi
+\fi
+\next%
+}
+\def\addtok#1{%
+\edef\act{%
+\noexpand\@icode={\the\@icode\noexpand#1,}%
+}%
+\act%
+}
+\def\addtoks#1{%
+\edef\act{%
+\noexpand\@icode={\the\@icode#1,}%
+}%
+\act
+\@tempnum=#1 \multiply\@tempnum by\@chnum
+\advance\@chtotal by\@tempnum
+\advance\@chnum by 1%
+\relax%
+}
+\def\addchar#1{%
+\expandafter\ifx\csname:\string#1\endcsname\relax
+\errmessage{The input token "\string#1" is not included in
+Code 128 table and will ignored}%
+\else
+\expandafter\addtoks\expandafter{%
+\csname:\string#1\endcsname%
+}%
+\fi%
+}
+\endinput
+%%
+%% End of file `gs1-128.sty'.
