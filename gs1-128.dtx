@@ -375,7 +375,8 @@
 % \end{macro}
 % \end{macro}
 % \end{macro}
-%
+% 
+% \subsection{Internal Representation of Code}
 % \begin{macro}{\addtok}
 % |\addtok|\meta{token} add \meta{token}|,| to |\@icode|.
 %    \begin{macrocode}
@@ -424,5 +425,314 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \subsection{Setting the Code}
+% \begin{macro}{\code}
+% The main macro for setting the code, |\code|\marg{text}, first converts the
+% the input text \meta{text} into the internal representation in |\@icode|.
+% The format of |\@icode| is |\start|\meta{num}|,|\meta{num}|,|\dots|\stop|,
+% where |\start| is one of |\startA|, |\startB|, or |\startC|. \meta{num}
+% represents the line of the code table of output characters. There may
+% be arbitrarily many \meta{num}s. The sequence has to be terminated by
+% |\stop|.
+% 
+% The start character is set automatically:
+% \begin{itemize}
+%	\item If the first 4 input characters of \meta{text} are digits, use
+%		|\startC|.
+%	\item If the next uncommon character of \meta{text} is from code A
+%		and not from code B, then |\startA| is used. The
+%		\emph{next uncommon character} is the first character either from
+%		code A or code B, but not both 
+% \end{itemize}
+%    \begin{macrocode}
+\def\code#1{%
+	\@inputtext={#1}%
+	\wlog{** GS1-128 input: \the\@inputtext}%
+	\@icode={}%
+	\@chnum=1
+	\numofdigits#1\stop
+%    \end{macrocode}
+% Counter |\@tempnum| now contains the number of \emph{leading} digits.
+%    \begin{macrocode}
+	\ifnum\@tempnum>3
+		\addtok\startC
+		\@chtotal=2
+		\let\Next=\codeC
+	\else
+		\testnext{A:} #1\stop
+		\if@next
+			\addtok\startA
+			\@chtotal=0
+			\let\Next=\codeA
+		\else
+			\addto\startB
+			\@chtotal=1
+			\let\Next=\codeB
+		\fi%
+	\fi%
+	\Next #1\End\End%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\codeA}
+% Text is set using \textbf{code A}. Test to change the mode:
+% \begin{itemize}
+%	\item If the next 4 input characters ar digits \emph{and} the number of
+%		digits is even, then switch to mode C, using \meta{CODE C} (line 99).
+%	\item If the next character is from code B and \emph{not} from code A,
+%		then:
+%		\begin{itemize}
+%			\item If the next uncommon character is from code B (and not
+%				code A), then switch to mode B, using \meta{CODE B} (line 100),
+%			\item else, use \meta{SHIFT} (line 98) and stay in mode A.
+%		\end{itemize}
+% \end{itemize}
+%    \begin{macrocode}
+\def\codeA #1#2#3\End{%
+	\addchar#1%
+	\numofdigits#2#3\stop
+	\ifnum\@tempnum>3
+		\ifodd\@tempnum%
+		\else
+			\addtoks{99}%
+			\let\Next=\codeC
+		\fi
+	\else
+		\ifx#2\End
+			\let\Next=\finalcode
+		\else
+			\testchar{B:} #2%
+			\if@char
+				\testnext{B:} #3\stop
+				\if@next
+					\addtoks{101}%
+					\let\Next=\codeA%
+				\else
+					\addtoks{98}%
+				\fi%
+			\fi%
+		\fi%
+	\fi
+	\Next #2#3\End
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\codeB}
+% Text is set using \textbf{code B}. Test to change the mode:
+% \begin{itemize}
+%	\item If the next 4 input characters ar digits \emph{and} the number of
+%		digits is even, then switch to mode C, using \meta{CODE C} (line 99).
+%	\item If the next character is from code A and \emph{not} from code B,
+%		then:
+%		\begin{itemize}
+%			\item If the next uncommon character is from code A (and not
+%				code B), then switch to mode A, using \meta{CODE A} (line 101),
+%			\item else, use \meta{SHIFT} (line 98) and stay in mode A.
+%		\end{itemize}
+% \end{itemize}
+%    \begin{macrocode}
+\def\codeB #1#2#3\End{%
+	\addchar#1%
+	\numofdigits#2#3\stop
+	\ifnum\@tempnum>3
+		\ifodd\@tempnum%
+		\else
+			\addtoks{99}%
+			\let\Next=\codeC
+		\fi
+	\else
+		\ifx#2\End
+			\let\Next=\finalcode
+		\else
+			\testchar{A:} #2%
+			\if@char
+				\testnext{A:} #3\stop
+				\if@next
+					\addtoks{101}%
+					\let\Next=\codeA%
+				\else
+					\addtoks{98}%
+				\fi%
+			\fi%
+		\fi%
+	\fi
+	\Next #2#3\End
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\codeC}
+% Text is set using \textbf{code C}. Test to change the mode:
+% \begin{itemize}
+%	\item If not the next two characters are digits, switch to code A or B by
+%		the following rule:
+%		\begin{itemize}
+%			\item If the next uncommon character is from code A then switch to
+%				mode A, using \meta{CODE A} (line 101),
+%			\item else, switch to mode A, using \meta{CODE A} (line 101)
+%		\end{itemize}
+% \end{itemize}
+%    \begin{macrocode}
+\def\codeC #1#2#3#4\End{%
+	\addtoks{#1#2}%
+	\ifx#3\End
+		\let\Next=\finalcode
+	\else
+		\textchar{D:} #3%
+		\if@char
+			\def\@tempc{#4}%
+			\ifx\@tempc\empty
+				\switchtoAorB #3\stop
+			\else
+				\separate #4\stop
+				\edef\act{\noexpand\testchar{D:}\@tempc}%
+				\act
+				\if@char
+				\else
+					\switchtoAorB #3#4\stop
+				\fi
+			\fi
+		\else
+			\switchtoAorB #3#4\stop
+		\fi
+	\fi
+	\Next #3#4\End%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\separate}
+%    \begin{macrocode}
+\def\separate#1#2\stop{\def\@tempc{#1}}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\switchtoAorB}
+%    \begin{macrocode}
+\def\switchtoAorB #1\stop{%
+	\testnext{A:} #1\stop
+	\if@next
+		\addtoks{101}%
+		\let\Next=\codeA
+	\else
+		\addtoks{100}%
+		\let\Next=\codeB
+	\fi%
+}
+%    \end{macrocode}
+% \end{macro}
+% 
+% \begin{macro}{\finalcode}
+%    \begin{macrocode}
+\def\finalcode\End\End{%
+	\addchecksum
+	\addtok\stop
+	\wlog{encoded: \the\@icode}%
+	\expandafter\makecode\the\@icode%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\addchecksum}
+% |\addchecksum| adds the checksum of the input string to |\@icode|. The
+% checksum is |\@chtotal| modulo 103.
+%    \begin{macrocode}
+\def\addchecksum{%
+	\@tempnum=\@chtotal
+	\divide\@tempnum by 103
+	\multiply\@tempnum by 103
+	\advance\@chtotal by -\@tempnum
+	\addtoks{\the\@chtotal}%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Typesetting the Code}
+% \begin{macro}{\makecode}
+% \begin{macro}{\@@makecode}
+% \begin{macro}{\finalmakecode}
+% |\makecode| converts the token \@icode from format
+% |\start|\meta{num}|,|\meta{num}|,|\dots|\stop,| into a sequence of digits.
+% Each digit represents the muliple of X module size for bar or space if it is
+% at either odd or even position. The representation of the code is stored in
+% the macro |\internalcode|.
+%    \begin{macrocode}
+\def\makecode#1,{%
+	\let\next=\@@makecode
+	\edef\internalcode{#1}%
+	\next%
+}
+\def\@@makecode#1,{
+	\ifx\stop#1
+		\let\next=\finalmakecode
+		\edef\internalcode{\internalcode\stop}%
+	\else
+		\edef\internalcode{\internalcode\tableofcode{#1}}%
+	\fi
+	\next%
+}
+\def\finalmakecode{%
+	\wlog{black-white: \internalcode}%
+	\begcode
+		\let\next=\makebars
+		\expandafter\makebars\internalcode%
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\makebars}
+% |\makebars| simply makes |\vrule|s and |\kern|s of appropriate sizes from
+% |\internalcode| representation. Each width of |\vrule| is corrected by
+% |\bcorr| and opposite for |\kern|.
+%    \begin{macrocode}
+\def\makebars#1#2{%
+	\if0#2%
+		\let\next=\endcode%
+	\fi
+	\@workdimen=#1\X
+	\advance\@workdimen by -\bcorr
+	\vrule width\@workdimen
+	\@workdimen=#2\X
+	\advance\@workdimen by \bcorr
+	\kern\@workdimen
+	\next%
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\begcode}
+% \begin{macro}{\endcode}
+%    \begin{macrocode}
+\def\begcode{%
+	\hbox\bgroup\vrule height\barheight width0pt%
+}
+\def\endcode{%
+	\egroup
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\codeothertext}
+% \begin{macro}{\codetext}
+% |\codetext| and |\codeothertext| are used to label the code.
+%    \begin{macrocode}
+\def\codeothertext#1#2{%
+	\vbox{%
+		\halign{%
+			\hfil##\hfil\cr%
+			\code{#1}\cr%
+			\texttt{#2}\cr%
+		}%
+	}%
+}
+\def\codetext#1{\codeothertext{#1}{#1}}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
 % \Finale
 \endinput

@@ -182,6 +182,181 @@ Code 128 table and will ignored}%
 }%
 \fi%
 }
+\def\code#1{%
+\@inputtext={#1}%
+\wlog{** GS1-128 input: \the\@inputtext}%
+\@icode={}%
+\@chnum=1
+\numofdigits#1\stop
+\ifnum\@tempnum>3
+\addtok\startC
+\@chtotal=2
+\let\Next=\codeC
+\else
+\testnext{A:} #1\stop
+\if@next
+\addtok\startA
+\@chtotal=0
+\let\Next=\codeA
+\else
+\addto\startB
+\@chtotal=1
+\let\Next=\codeB
+\fi%
+\fi%
+\Next #1\End\End%
+}
+\def\codeA #1#2#3\End{%
+\addchar#1%
+\numofdigits#2#3\stop
+\ifnum\@tempnum>3
+\ifodd\@tempnum%
+\else
+\addtoks{99}%
+\let\Next=\codeC
+\fi
+\else
+\ifx#2\End
+\let\Next=\finalcode
+\else
+\testchar{B:} #2%
+\if@char
+\testnext{B:} #3\stop
+\if@next
+\addtoks{101}%
+\let\Next=\codeA%
+\else
+\addtoks{98}%
+\fi%
+\fi%
+\fi%
+\fi
+\Next #2#3\End
+}
+\def\codeB #1#2#3\End{%
+\addchar#1%
+\numofdigits#2#3\stop
+\ifnum\@tempnum>3
+\ifodd\@tempnum%
+\else
+\addtoks{99}%
+\let\Next=\codeC
+\fi
+\else
+\ifx#2\End
+\let\Next=\finalcode
+\else
+\testchar{A:} #2%
+\if@char
+\testnext{A:} #3\stop
+\if@next
+\addtoks{101}%
+\let\Next=\codeA%
+\else
+\addtoks{98}%
+\fi%
+\fi%
+\fi%
+\fi
+\Next #2#3\End
+}
+\def\codeC #1#2#3#4\End{%
+\addtoks{#1#2}%
+\ifx#3\End
+\let\Next=\finalcode
+\else
+\textchar{D:} #3%
+\if@char
+\def\@tempc{#4}%
+\ifx\@tempc\empty
+\switchtoAorB #3\stop
+\else
+\separate #4\stop
+\edef\act{\noexpand\testchar{D:}\@tempc}%
+\act
+\if@char
+\else
+\switchtoAorB #3#4\stop
+\fi
+\fi
+\else
+\switchtoAorB #3#4\stop
+\fi
+\fi
+\Next #3#4\End%
+}
+\def\separate#1#2\stop{\def\@tempc{#1}}
+\def\switchtoAorB #1\stop{%
+\testnext{A:} #1\stop
+\if@next
+\addtoks{101}%
+\let\Next=\codeA
+\else
+\addtoks{100}%
+\let\Next=\codeB
+\fi%
+}
+\def\finalcode\End\End{%
+\addchecksum
+\addtok\stop
+\wlog{encoded: \the\@icode}%
+\expandafter\makecode\the\@icode%
+}
+\def\addchecksum{%
+\@tempnum=\@chtotal
+\divide\@tempnum by 103
+\multiply\@tempnum by 103
+\advance\@chtotal by -\@tempnum
+\addtoks{\the\@chtotal}%
+}
+\def\makecode#1,{%
+\let\next=\@@makecode
+\edef\internalcode{#1}%
+\next%
+}
+\def\@@makecode#1,{
+\ifx\stop#1
+\let\next=\finalmakecode
+\edef\internalcode{\internalcode\stop}%
+\else
+\edef\internalcode{\internalcode\tableofcode{#1}}%
+\fi
+\next%
+}
+\def\finalmakecode{%
+\wlog{black-white: \internalcode}%
+\begcode
+\let\next=\makebars
+\expandafter\makebars\internalcode%
+}
+\def\makebars#1#2{%
+\if0#2%
+\let\next=\endcode%
+\fi
+\@workdimen=#1\X
+\advance\@workdimen by -\bcorr
+\vrule width\@workdimen
+\@workdimen=#2\X
+\advance\@workdimen by \bcorr
+\kern\@workdimen
+\next%
+}
+\def\begcode{%
+\hbox\bgroup\vrule height\barheight width0pt%
+}
+\def\endcode{%
+\egroup
+}
+\def\codeothertext#1#2{%
+\vbox{%
+\halign{%
+\hfil##\hfil\cr%
+\code{#1}\cr%
+\texttt{#2}\cr%
+}%
+}%
+}
+\def\codetext#1{\codeothertext{#1}{#1}}
 \endinput
 %%
 %% End of file `gs1-128.sty'.
