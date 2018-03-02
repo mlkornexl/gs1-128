@@ -167,8 +167,9 @@ a b c d e f g h i j k l m n o p q r s t u v w x y z \{ | \} \~ \DEL
 \noexpand\@icode={\the\@icode#1,}%
 }%
 \act
-\@tempnum=#1 \multiply\@tempnum by\@chnum
-\advance\@chtotal by\@tempnum
+\@tempnum=#1
+\multiply\@tempnum by \@chnum
+\advance\@chtotal by \@tempnum
 \advance\@chnum by 1%
 \relax%
 }
@@ -204,6 +205,7 @@ Code 128 table and will ignored}%
 \let\Next=\codeB
 \fi%
 \fi%
+\addtoks{102}%
 \Next #1\End\End%
 }
 \def\codeA #1#2#3\End{%

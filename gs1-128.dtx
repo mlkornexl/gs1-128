@@ -122,6 +122,11 @@
 %
 % \begin{macro}{\@tempnum}
 % \begin{macro}{\@chnum}
+% |\@chnum| and |\@chtotal| are used for checksum calculation. |\@chnum|
+% contains the number of input characters (excluding checksum and \meta{Stop}
+% token). The start sequence, i\,e.\ \meta{Start A}, \meta{Start B}, or
+% \meta{Start C}, followed by \meta{FNC1}, is treated as a single character.
+% |\@chtotal| stores the value of the product sum.
 % \begin{macro}{\@chtotal}
 %    \begin{macrocode}
 \newcount\@tempnum
@@ -399,8 +404,9 @@
 		\noexpand\@icode={\the\@icode#1,}%
 	}%
 	\act
-	\@tempnum=#1 \multiply\@tempnum by\@chnum
-	\advance\@chtotal by\@tempnum
+	\@tempnum=#1
+	\multiply\@tempnum by \@chnum
+	\advance\@chtotal by \@tempnum
 	\advance\@chnum by 1%
 	\relax%
 }
@@ -470,6 +476,7 @@
 			\let\Next=\codeB
 		\fi%
 	\fi%
+	\addtoks{102}%
 	\Next #1\End\End%
 }
 %    \end{macrocode}
