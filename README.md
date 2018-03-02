@@ -8,4 +8,5 @@ The code is based on the _code128_ package written by Petr Olšák, available on
 ## Licensing
 The code is licensed under [GNU General Public License 3.0](./LICENSE).
 
-The _code128_ package is licensed under GNU General Public License.
+The _code128_ package is licensed under
+[GNU General Public License](https://ctan.org/license/gpl).
